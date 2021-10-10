@@ -1,4 +1,5 @@
 const Joi = require('joi');
+Joi.objectId = require('joi-objectid')(Joi);
 
 const schemaContact = Joi.object({
   isFavorite: Joi.boolean().optional(),
@@ -11,9 +12,8 @@ const schemaStatusContact = Joi.object({
   isFavorite: Joi.boolean().required(),
 });
 
-const pattern = '\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}';
 const schemaId = Joi.object({
-  id: Joi.string().pattern(new RegExp(pattern)).required()
+  contactId: Joi.objectId().required(),
 });
 
 const validate = async (schema, obj, res, next) => {

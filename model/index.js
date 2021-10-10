@@ -1,59 +1,55 @@
-const crypto = require('crypto');
-const DB = require('./db');
-const db = new DB('contacts.json');
+const { ObjectId } = require('mongodb');
+const db = require('./db');
+
+const getCollection = async (db, name) => {
+  const client = await db;
+  const collection = await client.db().collection(name);
+
+  return collection;
+};
 
 const listContacts = async () => {
-  return await db.read();
+  const collection = await getCollection(db, 'contacts');
+  const result = await collection.find({}).toArray();
+  return result;
 };
 
 const getContactById = async contactId => {
-  const contacts = await db.read();
-  const [contact] = contacts.filter(({ id }) => id === contactId);
-
-  return contact;
+  const collection = await getCollection(db, 'contacts');
+  const oid = new ObjectId(contactId);
+  const [result] = await collection.find({ _id: oid }).toArray();
+  return result;
 };
 
 const removeContact = async contactId => {
-  const contacts = await db.read();
-  const contactIndex = contacts.findIndex(({ id }) => id === contactId);
+  const collection = await getCollection(db, 'contacts');
+  const oid = new ObjectId(contactId);
+  const { value: result } = await collection.findOneAndDelete({ _id: oid });
 
-  if (contactIndex === -1) {
-    return null;
-  }
-
-  const [result] = contacts.splice(contactIndex, 1);
-  await db.write(contacts);
-
-  return [result];
+  return result;
 };
 
 const addContact = async body => {
-  const contacts = await db.read();
   const newContact = {
-    id: crypto.randomUUID(),
     isFavorite: false,
     ...body,
   };
+  const collection = await getCollection(db, 'contacts');
+  const result = await collection.insertOne(newContact);
 
-  contacts.push(newContact);
-
-  await db.write(contacts);
-
-  return newContact;
+  return await getContactById(result.insertedId);
 };
 
 const updateContact = async (contactId, body) => {
-  const contacts = await db.read();
-  const contactIndex = contacts.findIndex(({ id }) => id === contactId);
+  const collection = await getCollection(db, 'contacts');
+  const oid = new ObjectId(contactId);
+  const { value: result } = await collection.findOneAndUpdate(
+    { _id: oid },
+    { $set: body },
+    { returnDocument: 'after' }
+  );
 
-  if (contactIndex === -1) {
-    return null;
-  }
-
-  contacts[contactIndex] = { ...contacts[contactIndex], ...body };
-  await db.write(contacts);
-
-  return contacts[contactIndex];
+  return result;
 };
 
 module.exports = {

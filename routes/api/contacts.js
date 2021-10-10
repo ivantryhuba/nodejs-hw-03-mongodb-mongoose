@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Contacts = require('../../model');
-const { validateContact, validateStatusContact } = require('./validation');
+const { validateContact, validateStatusContact, validateId,} = require('./validation');
 
 router.get('/', async (req, res, next) => {
   try {
@@ -18,7 +18,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.get('/:contactId', async (req, res, next) => {
+router.get('/:contactId', validateId, async (req, res, next) => {
   try {
     const contact = await Contacts.getContactById(req.params.contactId);
 
@@ -51,7 +51,7 @@ router.post('/', validateContact, async (req, res, next) => {
   }
 });
 
-router.delete('/:contactId', async (req, res, next) => {
+router.delete('/:contactId', validateId, async (req, res, next) => {
   try {
     const contact = await Contacts.removeContact(req.params.contactId);
 
@@ -69,29 +69,35 @@ router.delete('/:contactId', async (req, res, next) => {
   }
 });
 
-router.put('/:contactId', validateContact, async (req, res, next) => {
-  try {
-    const contact = await Contacts.updateContact(
-      req.params.contactId,
-      req.body,
-    );
+router.put(
+  '/:contactId',
+  validateId,
+  validateContact,
+  async (req, res, next) => {
+    try {
+      const contact = await Contacts.updateContact(
+        req.params.contactId,
+        req.body,
+      );
 
-    if (!contact) {
+      if (!contact) {
+        return res
+          .status(404)
+          .json({ status: 'error', code: 404, message: 'Contact not found' });
+      }
+
       return res
-        .status(404)
-        .json({ status: 'error', code: 404, message: 'Contact not found' });
+        .status(200)
+        .json({ status: 'success', code: 200, data: { contact } });
+    } catch (error) {
+      next(error);
     }
-
-    return res
-      .status(200)
-      .json({ status: 'success', code: 200, data: { contact } });
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 router.patch(
   '/:contactId/favorite/',
+  validateId,
   validateStatusContact,
   async (req, res, next) => {
     try {

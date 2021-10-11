@@ -21,12 +21,11 @@ const addContact = async body => {
 };
 
 const updateContact = async (contactId, body) => {
-  const { value: result } = await Contact.findByIdAndUpdate(
+  const result = await Contact.findByIdAndUpdate(
     { _id: contactId },
     { ...body },
     { new: true },
   );
-
   return result;
 };
 

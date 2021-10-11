@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Contacts = require('../../model');
+const Contacts = require('../../repository');
 const { validateContact, validateStatusContact, validateId,} = require('./validation');
 
 router.get('/', async (req, res, next) => {
